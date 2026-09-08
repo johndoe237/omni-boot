@@ -1,0 +1,1 @@
+[{"id":"connection-a","name":"Connection A","env":"CUSTOM_PROVIDER_CONNECTIONS","credential":"a"},{"id":"connection-b","name":"Connection B","env":"CUSTOM_PROVIDER_CONNECTIONS","credential":"b"},{"id":"connection-c","name":"Connection C","env":"CUSTOM_PROVIDER_CONNECTIONS","credential":"c"}]

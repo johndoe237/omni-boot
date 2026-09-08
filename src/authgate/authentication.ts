@@ -1,0 +1,1 @@
+import {timingSafeEqual} from 'node:crypto'; export function validHeader(value:string|undefined,expected:string){if(!value)return false;const a=Buffer.from(value),b=Buffer.from(expected);return a.length===b.length&&timingSafeEqual(a,b)}

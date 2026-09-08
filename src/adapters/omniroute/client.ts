@@ -1,0 +1,2 @@
+import type {OmniRouteClient} from './types.js';
+export function createClient(baseUrl:string,apiKey:string):OmniRouteClient{return {async request(path,init={}){const r=await fetch(new URL(path,baseUrl),{...init,headers:{"content-type":"application/json",authorization:`Bearer ${apiKey}`,...(init.headers||{})}}); const text=await r.text(); let body:any; try{body=text?JSON.parse(text):undefined}catch{body=text} if(!r.ok) throw new Error(`OmniRoute ${r.status} on ${path}: ${typeof body==='string'?body:body?.error||'request failed'}`); return body;}}}

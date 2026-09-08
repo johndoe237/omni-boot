@@ -1,0 +1,1 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import {validHeader} from '../src/authgate/authentication.js'; test('auth gate accepts only exact secret',()=>{assert.equal(validHeader(undefined,'x'),false);assert.equal(validHeader('bad','x'),false);assert.equal(validHeader('x','x'),true)});
