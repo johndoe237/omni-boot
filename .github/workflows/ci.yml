@@ -39,7 +39,7 @@ jobs:
         run: docker build --progress=plain -t omni-boot:ci .
       - name: Start container
         run: |
-          docker run -d --rm \
+          docker run -d \
             --name omni-boot-ci \
             -p 8080:8080 \
             -e OMNI_BOOT_API_KEY=ci-public-secret \
@@ -50,6 +50,12 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in {1..90}; do
+            if ! docker inspect -f '{{.State.Running}}' omni-boot-ci 2>/dev/null | grep -q true; then
+              echo 'Container exited before becoming ready' >&2
+              docker inspect omni-boot-ci || true
+              docker logs omni-boot-ci || true
+              exit 1
+            fi
             if curl --fail --silent --show-error \
               -H 'X-Omni-Boot-Key: ci-public-secret' \
               http://127.0.0.1:8080/api/health/ping >/tmp/health.json; then
@@ -72,10 +78,16 @@ jobs:
             http://127.0.0.1:8080/api/health/ping
       - name: Collect container logs
         if: always()
-        run: docker logs omni-boot-ci 2>&1 || true
+        run: |
+          docker ps -a --filter name=omni-boot-ci
+          docker inspect omni-boot-ci 2>&1 || true
+          docker logs omni-boot-ci 2>&1 || true
       - name: Stop container
         if: always()
         run: docker stop omni-boot-ci 2>/dev/null || true
+      - name: Remove container
+        if: always()
+        run: docker rm -f omni-boot-ci 2>/dev/null || true
 
   upstream-omniroute-build:
     name: OmniRoute v3.8.49 production build
@@ -99,6 +111,11 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Build OmniRoute production artifact
         working-directory: omniroute
+        env:
+          # v3.8.49 documents webpack as the supported escape hatch when
+          # Turbopack exhausts native memory on constrained CI runners.
+          OMNIROUTE_USE_TURBOPACK: '0'
+          OMNIROUTE_BUILD_MEMORY_MB: '4096'
         run: npm run build
 
   all-checks-finished:
