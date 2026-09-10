@@ -72,7 +72,7 @@ La phase Registry crée chaque proxy via `/api/settings/proxies` et construit un
 Variables principales :
 
 ```text
-OMNI_BOOT_API_KEY       secret externe optionnel pour auth-gate ; généré aléatoirement s’il est absent
+OMNI_BOOT_API_KEY       secret client obligatoire pour auth-gate (ce n’est pas la clé interne OmniRoute)
 OMNIROUTE_PORT          20128 par défaut
 AUTH_GATE_PORT          8080 par défaut
 OMNIROUTE_URL           http://127.0.0.1:20128 par défaut
@@ -114,6 +114,7 @@ Header absent ou incorrect : `401`. Header correct : le header est retiré, puis
 
 ```sh
 npm ci
+export OMNI_BOOT_API_KEY='client-secret-fictif'
 export CUSTOM_PROVIDER_KEYS='["key-a","key-b"]'
 export OMNIROUTE_COMMAND='omniroute'
 npm start
@@ -128,6 +129,7 @@ Le Dockerfile installe explicitement `omniroute@3.8.49`, compile `omni-boot`, co
 ```sh
 docker build -t omni-boot:3.8.49 .
 docker run --rm -p 8080:8080 \
+  -e OMNI_BOOT_API_KEY='client-secret-fictif' \
   -e CUSTOM_PROVIDER_KEYS='["key-a","key-b"]' \
   omni-boot:3.8.49
 ```

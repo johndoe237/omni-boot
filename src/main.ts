@@ -10,7 +10,8 @@ import { log } from './utils/logging.js';
 const port = Number(process.env.OMNIROUTE_PORT || 20128);
 const publicPort = Number(process.env.AUTH_GATE_PORT || 8080);
 const base = process.env.OMNIROUTE_URL || `http://127.0.0.1:${port}`;
-const gateSecret = process.env.OMNI_BOOT_API_KEY || randomBytes(32).toString('base64url');
+const gateSecret = process.env.OMNI_BOOT_API_KEY;
+if (!gateSecret) throw new Error('OMNI_BOOT_API_KEY is required for the public auth-gate');
 const runtimePassword = randomBytes(32).toString('base64url');
 const client = createClient(base);
 const child = spawn(process.env.OMNIROUTE_COMMAND || 'omniroute', {
