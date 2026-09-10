@@ -1,0 +1,124 @@
+name: CI — omni-boot validation
+
+on:
+  push:
+    branches:
+      - main
+      - 'ci/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  omni-boot-tests:
+    name: omni-boot tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.2'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
+
+  docker-build-and-smoke:
+    name: Docker build and smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build image
+        run: docker build --progress=plain -t omni-boot:ci .
+      - name: Start container
+        run: |
+          docker run -d --rm \
+            --name omni-boot-ci \
+            -p 8080:8080 \
+            -e OMNI_BOOT_API_KEY=ci-public-secret \
+            -e CUSTOM_PROVIDER_KEYS='[]' \
+            omni-boot:ci
+      - name: Wait for public health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..90}; do
+            if curl --fail --silent --show-error \
+              -H 'X-Omni-Boot-Key: ci-public-secret' \
+              http://127.0.0.1:8080/api/health/ping >/tmp/health.json; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'Container did not become ready' >&2
+          docker logs omni-boot-ci || true
+          exit 1
+      - name: Verify auth gate rejects missing key
+        run: |
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            http://127.0.0.1:8080/api/health/ping)" = "401"
+      - name: Verify auth gate forwards valid request
+        run: |
+          curl --fail --silent --show-error \
+            -H 'X-Omni-Boot-Key: ci-public-secret' \
+            http://127.0.0.1:8080/api/health/ping
+      - name: Collect container logs
+        if: always()
+        run: docker logs omni-boot-ci 2>&1 || true
+      - name: Stop container
+        if: always()
+        run: docker stop omni-boot-ci 2>/dev/null || true
+
+  upstream-omniroute-build:
+    name: OmniRoute v3.8.49 production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout OmniRoute v3.8.49
+        uses: actions/checkout@v4
+        with:
+          repository: diegosouzapw/OmniRoute
+          ref: v3.8.49
+          path: omniroute
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.2'
+          cache: npm
+          cache-dependency-path: omniroute/package-lock.json
+      - name: Install OmniRoute dependencies
+        working-directory: omniroute
+        run: npm ci --ignore-scripts
+      - name: Build OmniRoute production artifact
+        working-directory: omniroute
+        run: npm run build
+
+  all-checks-finished:
+    name: All checks finished
+    if: always()
+    needs:
+      - omni-boot-tests
+      - docker-build-and-smoke
+      - upstream-omniroute-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize results
+        run: |
+          echo "omni-boot-tests: ${{ needs.omni-boot-tests.result }}"
+          echo "docker-build-and-smoke: ${{ needs.docker-build-and-smoke.result }}"
+          echo "upstream-omniroute-build: ${{ needs.upstream-omniroute-build.result }}"
+          if [ "${{ needs.omni-boot-tests.result }}" != success ] || \
+             [ "${{ needs.docker-build-and-smoke.result }}" != success ] || \
+             [ "${{ needs.upstream-omniroute-build.result }}" != success ]; then
+            echo 'At least one validation failed.' >&2
+            exit 1
+          fi
+          echo 'All validations passed.'
