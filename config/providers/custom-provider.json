@@ -1,0 +1,8 @@
+{
+  "name": "custom-provider",
+  "type": "openai-compatible",
+  "baseUrl": "https://api.example.invalid/v1",
+  "apiKeys": "CUSTOM_PROVIDER_KEYS",
+  "models": ["model-a", "model-b", "openai/gpt-5.6-luna"],
+  "defaultModel": "model-a"
+}

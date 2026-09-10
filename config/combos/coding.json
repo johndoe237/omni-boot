@@ -1,1 +1,1 @@
-{"name":"coding","strategy":"fallback","models":[{"kind":"combo-ref","comboName":"custom-combo"},{"kind":"combo-ref","comboName":"free-combo"}]}
+{"name":"coding","strategy":"priority","targets":{"models":["custom-provider/openai/gpt-5.6-luna"],"combos":["custom-combo","free-combo"]}}

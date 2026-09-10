@@ -1,1 +1,1 @@
-export { connectionSchema } from './config.js';
+export type { OmniIds } from './config.js';

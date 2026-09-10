@@ -1,1 +1,1 @@
-{"name":"custom-combo","strategy":"fallback","models":[{"kind":"model","provider":"custom-provider","model":"model-a","connectionId":"connection-a"},{"kind":"model","provider":"custom-provider","model":"model-b","connectionId":"connection-b"},{"kind":"model","provider":"custom-provider","model":"model-c","connectionId":"connection-c"}]}
+{"name":"custom-combo","strategy":"round-robin","targets":{"models":["custom-provider/model-a","custom-provider/model-b"],"combos":[]}}

@@ -1,1 +1,1 @@
-export { modelSchema } from './config.js';
+export { providerSchema } from './config.js';

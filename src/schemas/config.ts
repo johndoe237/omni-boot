@@ -1,8 +1,13 @@
-import { z } from "zod";
-export const providerSchema=z.object({id:z.string().regex(/^[a-z0-9][a-z0-9-]*$/),name:z.string().min(1),type:z.string().min(1),apiType:z.string().optional(),baseUrl:z.string().url()});
-export const modelSchema=z.object({id:z.string().min(1),name:z.string().min(1)});
-export const connectionSchema=z.object({id:z.string().min(1),name:z.string().min(1),env:z.string().regex(/^[A-Z][A-Z0-9_]*$/),credential:z.string().min(1)});
-export const comboModelSchema=z.object({kind:z.literal("model"),provider:z.string().min(1),model:z.string().min(1),connectionId:z.string().optional()});
-export const comboRefSchema=z.object({kind:z.literal("combo-ref"),comboName:z.string().min(1)});
-export const comboSchema=z.object({name:z.string().regex(/^[a-z0-9][a-z0-9-]*$/),strategy:z.string().min(1),models:z.array(z.union([comboModelSchema,comboRefSchema]))});
-export type Provider=z.infer<typeof providerSchema>; export type Model=z.infer<typeof modelSchema>; export type Connection=z.infer<typeof connectionSchema>; export type Combo=z.infer<typeof comboSchema>;
+import { z } from 'zod';
+const name = z.string().trim().min(1).max(100).regex(/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/);
+const modelId = z.string().trim().min(1).max(500);
+export const providerSchema = z.object({ name, type: z.enum(['openai-compatible','anthropic-compatible']), baseUrl: z.string().url().optional(), apiKeys: z.string().trim().regex(/^[A-Z][A-Z0-9_]*$/), models: z.array(modelId).min(1), defaultModel: modelId }).strict().superRefine((p,ctx)=>{ if(p.type !== 'openai-compatible' && !p.baseUrl) ctx.addIssue({code:'custom',path:['baseUrl'],message:'baseUrl is required for this provider type'}); if(!p.models.includes(p.defaultModel)) ctx.addIssue({code:'custom',path:['defaultModel'],message:'defaultModel must be included in models'}); });
+export const comboTargetSchema = z.object({ models: z.array(z.string().trim().min(1)).default([]), combos: z.array(name).default([]) }).strict();
+export const comboSchema = z.object({ name, strategy: z.enum(['priority','weighted','round-robin','fill-first','random','least-used','cost-optimized','strict-random']), targets: comboTargetSchema }).strict();
+export const proxyEntrySchema = z.object({ id: name, type: z.enum(['http','https','socks5']), host: z.string().trim().min(1), port: z.coerce.number().int().min(1).max(65535), username: z.string().optional(), password: z.string().optional() }).strict();
+export const proxyAssignmentSchema = z.object({ scope: z.enum(['global','provider','account','combo']), scopeId: z.string().trim().nullable(), proxyIds: z.array(name).min(1), strategy: z.enum(['round-robin','random','sticky','latency']) }).strict().superRefine((a,ctx)=>{ if(a.scope !== 'global' && !a.scopeId) ctx.addIssue({code:'custom',path:['scopeId'],message:'scopeId is required for non-global scope'}); });
+export const proxySettingsSchema = z.object({ registry: z.array(proxyEntrySchema), assignments: z.array(proxyAssignmentSchema) }).strict();
+export type Provider=z.infer<typeof providerSchema>; export type Combo=z.infer<typeof comboSchema>; export type ProxySettings=z.infer<typeof proxySettingsSchema>; export type ProxyEntry=z.infer<typeof proxyEntrySchema>; export type ProxyAssignment=z.infer<typeof proxyAssignmentSchema>;
+export function splitProviderModel(reference:string){const i=reference.indexOf('/'); if(i<=0||i===reference.length-1) throw new Error(`Invalid provider/model reference: ${reference}`); return {provider:reference.slice(0,i),model:reference.slice(i+1)};}
+export function providerKey(name:string,index:number){return `${name}-key-${index+1}`;}
+export type OmniIds={providers:Record<string,string>;connections:Record<string,string[]>;combos:Record<string,string>;proxies:Record<string,string>}; export const emptyIds=():OmniIds=>({providers:{},connections:{},combos:{},proxies:{}});

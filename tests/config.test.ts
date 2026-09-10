@@ -1,0 +1,4 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import {keyArray,proxySettings} from '../src/utils/env.js';
+test('parses several provider keys from *_KEYS',()=>{process.env.TEST_KEYS='["key-a","key-b"]';assert.deepEqual(keyArray('TEST_KEYS'),['key-a','key-b']);delete process.env.TEST_KEYS;});
+test('rejects malformed key arrays',()=>{process.env.TEST_KEYS='{"a":"b"}';assert.throws(()=>keyArray('TEST_KEYS'),/non-empty JSON array/);delete process.env.TEST_KEYS;});
+test('parses proxy registry as an array and assignments',()=>{process.env.PROXY_SETTINGS=JSON.stringify({registry:[{id:'proxy-1',type:'http',host:'proxy.test',port:8080}],assignments:[{scope:'global',scopeId:null,proxyIds:['proxy-1'],strategy:'round-robin'}]});assert.equal(proxySettings()?.registry[0].id,'proxy-1');delete process.env.PROXY_SETTINGS;});

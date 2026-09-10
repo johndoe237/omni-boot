@@ -1,1 +1,1 @@
-{"name":"free-combo","strategy":"fallback","models":[]}
+{"name":"free-combo","strategy":"priority","targets":{"models":[],"combos":[]}}
