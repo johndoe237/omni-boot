@@ -65,14 +65,14 @@ Il n’existe volontairement ni configuration proxy dans Git ni fichier séparé
 }
 ```
 
-La phase Registry crée chaque proxy via `/api/v1/management/proxies` et construit une Map mémoire `omni-boot ID -> OmniRoute ID`. La phase Assignments ajoute les IDs réels aux pools via `/api/settings/proxies/pool`, puis configure la stratégie native. `omni-boot` ne fait jamais la rotation lui-même.
+La phase Registry crée chaque proxy via `/api/settings/proxies` et construit une Map mémoire `omni-boot ID -> OmniRoute ID`. La phase Assignments ajoute les IDs réels aux pools via `PUT /api/settings/proxies/pool`, puis configure la stratégie native. `omni-boot` ne fait jamais la rotation lui-même. Dans OmniRoute v3.8.49, ce `PUT` ajoute un membre idempotent à la position suivante ; il ne remplace pas les membres existants.
 
 ## Variables
 
 Variables principales :
 
 ```text
-OMNI_BOOT_API_KEY       secret attendu par auth-gate
+OMNI_BOOT_API_KEY       secret externe optionnel pour auth-gate ; généré aléatoirement s’il est absent
 OMNIROUTE_PORT          20128 par défaut
 AUTH_GATE_PORT          8080 par défaut
 OMNIROUTE_URL           http://127.0.0.1:20128 par défaut
@@ -82,20 +82,21 @@ OMNIROUTE_READY_TIMEOUT_MS 60000 par défaut
 PROXY_SETTINGS          DSL JSON optionnel des proxies
 ```
 
-Une clé de management distante n’est pas utilisée et ne doit pas être fournie. Les appels de bootstrap vont vers l’API locale OmniRoute sans header `Authorization`; v3.8.49 autorise le mode frais loopback tant qu’aucun mot de passe/OIDC n’est configuré. Si l’instance locale est configurée avec une authentification persistante, ce mode doit être explicitement adapté plutôt que contourné silencieusement.
+L’utilisateur ne fournit aucune clé de management OmniRoute. Au démarrage, omni-boot génère un mot de passe aléatoire en mémoire, le transmet uniquement à son processus enfant OmniRoute via `INITIAL_PASSWORD`, attend le health-check, puis réalise `POST /api/auth/login` en loopback et conserve uniquement le cookie de session en mémoire. Ce secret n’est ni affiché ni exposé par auth-gate ; un nouveau conteneur en génère un nouveau. Le code n’envoie pas de clé `Authorization` utilisateur aux APIs de management.
 
 ## Lifecycle
 
 1. démarrer OmniRoute ;
 2. sonder `GET /api/health/ping` jusqu’à une réponse 2xx, sans délai fixe de readiness ;
 3. charger et valider les providers et combos ;
-4. créer les provider nodes ;
-5. parser les variables `*_KEYS` et créer une connection par clé ;
-6. créer le registry proxy, si `PROXY_SETTINGS` est fourni ;
-7. résoudre les IDs proxy logiques vers les IDs OmniRoute réels ;
-8. ajouter les proxies aux pools et configurer leurs stratégies ;
-9. traduire et créer les combos ;
-10. seulement ensuite écouter publiquement via auth-gate.
+4. se connecter localement à OmniRoute avec le secret runtime généré ;
+5. créer les provider nodes ;
+6. parser les variables `*_KEYS` et créer une connection par clé ;
+7. créer le registry proxy, si `PROXY_SETTINGS` est fourni ;
+8. résoudre les IDs proxy logiques vers les IDs OmniRoute réels ;
+9. ajouter les proxies aux pools et configurer leurs stratégies ;
+10. traduire et créer les combos ;
+11. seulement ensuite écouter publiquement via auth-gate.
 
 Les IDs sont en mémoire uniquement et disparaissent à la destruction du conteneur. Aucun volume ou mapping durable OmniRoute n’est requis par le projet.
 
@@ -113,7 +114,6 @@ Header absent ou incorrect : `401`. Header correct : le header est retiré, puis
 
 ```sh
 npm ci
-export OMNI_BOOT_API_KEY='client-secret-fictif'
 export CUSTOM_PROVIDER_KEYS='["key-a","key-b"]'
 export OMNIROUTE_COMMAND='omniroute'
 npm start
@@ -128,7 +128,6 @@ Le Dockerfile installe explicitement `omniroute@3.8.49`, compile `omni-boot`, co
 ```sh
 docker build -t omni-boot:3.8.49 .
 docker run --rm -p 8080:8080 \
-  -e OMNI_BOOT_API_KEY='client-secret-fictif' \
   -e CUSTOM_PROVIDER_KEYS='["key-a","key-b"]' \
   omni-boot:3.8.49
 ```
