@@ -43,7 +43,7 @@ jobs:
             --name omni-boot-ci \
             -p 8080:8080 \
             -e OMNI_BOOT_API_KEY=ci-public-secret \
-            -e CUSTOM_PROVIDER_KEYS='[]' \
+            -e CUSTOM_PROVIDER_KEYS='["ci-placeholder-provider-key"]' \
             omni-boot:ci
       - name: Wait for public health endpoint
         shell: bash
@@ -115,7 +115,7 @@ jobs:
           # v3.8.49 documents webpack as the supported escape hatch when
           # Turbopack exhausts native memory on constrained CI runners.
           OMNIROUTE_USE_TURBOPACK: '0'
-          OMNIROUTE_BUILD_MEMORY_MB: '4096'
+          OMNIROUTE_BUILD_MEMORY_MB: '8192'
         run: npm run build
 
   all-checks-finished:
