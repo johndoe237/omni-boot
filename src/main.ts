@@ -22,6 +22,9 @@ const child = spawn(process.env.OMNIROUTE_COMMAND || 'omniroute', {
     INITIAL_PASSWORD: runtimePassword,
     OMNIROUTE_PORT: String(port),
     HOSTNAME: '127.0.0.1',
+    PROXY_FAIL_OPEN: process.env.PROXY_FAIL_OPEN || 'false',
+    OMNIROUTE_CONTROL_PLANE_PROXY_DIRECT_FALLBACK:
+      process.env.OMNIROUTE_CONTROL_PLANE_PROXY_DIRECT_FALLBACK || 'false',
   },
 });
 let gate: { close(): void } | undefined;
