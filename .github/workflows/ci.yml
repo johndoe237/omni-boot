@@ -3,7 +3,6 @@ name: CI — omni-boot validation
 on:
   push:
     branches:
-      - main
       - 'ci/**'
   pull_request:
     branches:
