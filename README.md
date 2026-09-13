@@ -155,3 +155,11 @@ npm test
 Les tests couvrent le DSL provider/combo/proxy, les variables `*_KEYS`, plusieurs connections, les model IDs contenant `/`, les références de combos, la traduction vers ComboStep, le health-check réel simulé, l’auth-gate, la suppression du header et le streaming.
 
 Le build Docker doit être exécuté dans un environnement disposant de Docker. Le sandbox de développement utilisé pour la release précédente ne fournissait pas la commande Docker.
+
+### Limites de sécurité d’AuthGate
+
+AuthGate conserve la backpressure native de Node.js : `req.pipe(upstream)` suspend la lecture lorsque le socket upstream ne peut plus recevoir, et `upstreamResponse.pipe(res)` suspend la lecture de la réponse lorsque le client public lit lentement. Aucun parsing, logging du body ou transformation de flux n’est effectué.
+
+Les timeouts de socket restent désactivés pendant une réponse SSE active. En revanche, la réception initiale est protégée contre le slowloris par un délai de 60 secondes pour les headers et de 120 secondes pour la réception du body. Le déploiement doit également utiliser l’authentification du gate et, si nécessaire, une protection réseau du PaaS ou un rate limiting en amont.
+
+OmniRoute v3.8.49 utilise un fetch basé sur `undici` pour le chemin proxy standard. Un test Node 22 avec un serveur HTTPS local signé par une CA additionnelle a confirmé que `NODE_EXTRA_CA_CERTS` permet à ce fetch de vérifier le certificat. Le mode optionnel `ENABLE_TLS_FINGERPRINT=true` utilise toutefois un client TLS distinct (`wreq-js`) ; ce mode doit être testé séparément avant d’être combiné avec un CA MITM privé.

@@ -62,12 +62,12 @@ export function startAuthGate(opts: { port: number; target: string; header: stri
     req.pipe(upstream, { end: true });
   });
 
-  // AuthGate is a long-lived streaming endpoint. Disable Node's default
-  // request/socket timeouts so an active LLM/SSE response is not cut off.
-  server.requestTimeout = 0;
+  // Protect header/body intake from slowloris clients while leaving the socket
+  // timeout disabled so an active LLM/SSE response is never cut off.
+  server.requestTimeout = 120_000;
   server.timeout = 0;
-  server.headersTimeout = 0;
-  server.keepAliveTimeout = 0;
+  server.headersTimeout = 60_000;
+  server.keepAliveTimeout = 5_000;
   server.listen(opts.port, '0.0.0.0');
   return server;
 }

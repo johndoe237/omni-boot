@@ -22,6 +22,9 @@ test('auth-gate forwards body and streams while removing its auth header', async
   const upstreamPort = (upstream.address() as AddressInfo).port;
   const gate = startAuthGate({ port: 0, target: `http://127.0.0.1:${upstreamPort}`, header: 'X-Omni-Boot-Key', secret: 'secret' });
   await new Promise<void>((resolve) => gate.once('listening', resolve));
+  assert.equal(gate.headersTimeout, 60_000);
+  assert.equal(gate.requestTimeout, 120_000);
+  assert.equal(gate.timeout, 0);
   const gatePort = (gate.address() as AddressInfo).port;
   t.after(() => { gate.close(); upstream.close(); });
   const unauthorized = await fetch(`http://127.0.0.1:${gatePort}/x`);
