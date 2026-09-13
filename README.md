@@ -117,7 +117,7 @@ Header absent ou incorrect : `401`. Header correct : le header est retiré, puis
 la requête, le body, les headers de réponse et les streams sont relayés vers
 OmniRoute. Auth-gate ne met pas en buffer les réponses et ne parse pas les
 événements SSE ; les headers spécifiques aux fournisseurs LLM sont conservés.
-Les timeouts HTTP du gate sont désactivés pour permettre les réponses longues.
+Le timeout de socket reste désactivé pour permettre les réponses longues, mais la réception initiale est protégée contre le slowloris : 60 secondes pour les headers et 120 secondes pour le body de requête.
 Auth-gate ne connaît ni les routes métier, ni les modèles, ni les combos.
 
 ## Exécution locale
