@@ -82,6 +82,11 @@ OMNIROUTE_READY_TIMEOUT_MS 60000 par défaut
 PROXY_SETTINGS          DSL JSON optionnel des proxies
 ```
 
+L’image embarque le certificat public partagé `certs/Flaretunnel-CA.crt` et
+configure automatiquement `NODE_EXTRA_CA_CERTS` pour Node.js et le processus
+OmniRoute. Aucun chemin de certificat ni clé privée FlareTunnel ne doit être
+fourni à `omni-boot`.
+
 L’utilisateur ne fournit aucune clé de management OmniRoute. Au démarrage, omni-boot génère un mot de passe aléatoire en mémoire, le transmet uniquement à son processus enfant OmniRoute via `INITIAL_PASSWORD`, attend le health-check, puis réalise `POST /api/auth/login` en loopback et conserve uniquement le cookie de session en mémoire. Ce secret n’est ni affiché ni exposé par auth-gate ; un nouveau conteneur en génère un nouveau. Le code n’envoie pas de clé `Authorization` utilisateur aux APIs de management.
 
 ## Lifecycle
@@ -108,7 +113,12 @@ Le client externe envoie :
 X-Omni-Boot-Key: valeur-de-OMNI_BOOT_API_KEY
 ```
 
-Header absent ou incorrect : `401`. Header correct : le header est retiré, puis la requête, le body, les headers de réponse et les streams sont relayés vers OmniRoute. Auth-gate ne connaît ni les routes métier, ni les modèles, ni les combos.
+Header absent ou incorrect : `401`. Header correct : le header est retiré, puis
+la requête, le body, les headers de réponse et les streams sont relayés vers
+OmniRoute. Auth-gate ne met pas en buffer les réponses et ne parse pas les
+événements SSE ; les headers spécifiques aux fournisseurs LLM sont conservés.
+Les timeouts HTTP du gate sont désactivés pour permettre les réponses longues.
+Auth-gate ne connaît ni les routes métier, ni les modèles, ni les combos.
 
 ## Exécution locale
 

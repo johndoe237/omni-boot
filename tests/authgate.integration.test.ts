@@ -7,6 +7,8 @@ import { startAuthGate } from '../src/authgate/server.js';
 test('auth-gate forwards body and streams while removing its auth header', async (t) => {
   const upstream = http.createServer((req, res) => {
     assert.equal(req.headers['x-omni-boot-key'], undefined);
+    assert.equal(req.headers['x-api-key'], 'provider-key');
+    assert.equal(req.headers['anthropic-version'], '2023-06-01');
     let body = '';
     req.setEncoding('utf8');
     req.on('data', (chunk) => { body += chunk; });
@@ -24,7 +26,13 @@ test('auth-gate forwards body and streams while removing its auth header', async
   t.after(() => { gate.close(); upstream.close(); });
   const unauthorized = await fetch(`http://127.0.0.1:${gatePort}/x`);
   assert.equal(unauthorized.status, 401);
-  const response = await fetch(`http://127.0.0.1:${gatePort}/x`, { method: 'POST', headers: { 'X-Omni-Boot-Key': 'secret', 'content-type': 'text/plain' }, body: 'payload' });
+  const response = await fetch(`http://127.0.0.1:${gatePort}/x`, { method: 'POST', headers: { 'X-Omni-Boot-Key': 'secret', 'content-type': 'text/plain', 'x-api-key': 'provider-key', 'anthropic-version': '2023-06-01' }, body: 'payload' });
   assert.equal(response.status, 200);
-  assert.equal(await response.text(), 'received:payload|done');
+  const reader = response.body?.getReader();
+  assert.ok(reader);
+  const first = await reader.read();
+  assert.equal(new TextDecoder().decode(first.value), 'received:payload|');
+  const second = await reader.read();
+  assert.equal(new TextDecoder().decode(second.value), 'done');
+  assert.equal((await reader.read()).done, true);
 });
