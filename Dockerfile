@@ -7,9 +7,9 @@ COPY tsconfig.json ./
 COPY src ./src
 COPY tests ./tests
 COPY config ./config
-COPY certs/Flaretunnel-CA.crt /app/certs/Flaretunnel-CA.crt
+COPY certs/Flaretunnel-MITM-CA.crt /app/certs/Flaretunnel-MITM-CA.crt
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
-ENV NODE_EXTRA_CA_CERTS=/app/certs/Flaretunnel-CA.crt
+ENV NODE_EXTRA_CA_CERTS=/app/certs/Flaretunnel-MITM-CA.crt
 RUN chmod +x ./docker-entrypoint.sh
 RUN npm run build
 EXPOSE 8080

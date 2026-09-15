@@ -82,7 +82,7 @@ OMNIROUTE_READY_TIMEOUT_MS 60000 par défaut
 PROXY_SETTINGS          DSL JSON optionnel des proxies
 ```
 
-L’image embarque le certificat public partagé `certs/Flaretunnel-CA.crt` et
+L’image embarque le certificat public partagé `certs/Flaretunnel-MITM-CA.crt` et
 configure automatiquement `NODE_EXTRA_CA_CERTS` pour Node.js et le processus
 OmniRoute. Aucun chemin de certificat ni clé privée FlareTunnel ne doit être
 fourni à `omni-boot`.
