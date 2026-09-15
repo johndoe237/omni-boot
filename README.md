@@ -88,7 +88,7 @@ OmniRoute. Aucun chemin de certificat ni clé privée FlareTunnel ne doit être
 fourni à `omni-boot`.
 
 L’image embarque également `certs/Flaretunnel-TRANSPORT-CA.crt` comme autorité
-publique réservée au futur TLS de transport du proxy. Cette autorité est
+publique dédiée au TLS de transport du proxy. Cette autorité est
 prépositionnée mais n’est pas encore utilisée par le code actuel.
 
 L’utilisateur ne fournit aucune clé de management OmniRoute. Au démarrage, omni-boot génère un mot de passe aléatoire en mémoire, le transmet uniquement à son processus enfant OmniRoute via `INITIAL_PASSWORD`, attend le health-check, puis réalise `POST /api/auth/login` en loopback et conserve uniquement le cookie de session en mémoire. Ce secret n’est ni affiché ni exposé par auth-gate ; un nouveau conteneur en génère un nouveau. Le code n’envoie pas de clé `Authorization` utilisateur aux APIs de management.
@@ -167,3 +167,7 @@ AuthGate conserve la backpressure native de Node.js : `req.pipe(upstream)` suspe
 Les timeouts de socket restent désactivés pendant une réponse SSE active. En revanche, la réception initiale est protégée contre le slowloris par un délai de 60 secondes pour les headers et de 120 secondes pour la réception du body. Le déploiement doit également utiliser l’authentification du gate et, si nécessaire, une protection réseau du PaaS ou un rate limiting en amont.
 
 OmniRoute v3.8.49 utilise un fetch basé sur `undici` pour le chemin proxy standard. Un test Node 22 avec un serveur HTTPS local signé par une CA additionnelle a confirmé que `NODE_EXTRA_CA_CERTS` permet à ce fetch de vérifier le certificat. Le mode optionnel `ENABLE_TLS_FINGERPRINT=true` utilise toutefois un client TLS distinct (`wreq-js`) ; ce mode doit être testé séparément avant d’être combiné avec un CA MITM privé.
+
+## Proxy HTTPS transport indépendant
+
+`type: "https"` désigne le TLS entre OmniRoute et le listener proxy FlareTunnel. `omni-boot` reste un déploiement indépendant de FlareTunnel-Manager. Son image conserve séparément les CA MITM et transport, puis expose un bundle Node explicite contenant les deux racines via `NODE_EXTRA_CA_CERTS` : le CA transport valide le proxy HTTPS et le CA MITM valide les certificats de domaines interceptés. Aucune clé privée de CA n’est embarquée dans cette image.
