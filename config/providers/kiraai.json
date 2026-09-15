@@ -1,0 +1,13 @@
+{
+  "name": "kiraai",
+  "type": "openai-compatible",
+  "baseUrl": "https://kiraai.vn/api/v1",
+  "apiKeys": "KIRAAI_KEYS",
+  "models": [
+    "kira-mini-1.0",
+    "mimo-v2.5-free",
+    "hy3-free",
+    "qwen3.8-flash-free"
+  ],
+  "defaultModel": "kira-mini-1.0"
+}
