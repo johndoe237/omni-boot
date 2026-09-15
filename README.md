@@ -87,6 +87,10 @@ configure automatiquement `NODE_EXTRA_CA_CERTS` pour Node.js et le processus
 OmniRoute. Aucun chemin de certificat ni clé privée FlareTunnel ne doit être
 fourni à `omni-boot`.
 
+L’image embarque également `certs/Flaretunnel-TRANSPORT-CA.crt` comme autorité
+publique réservée au futur TLS de transport du proxy. Cette autorité est
+prépositionnée mais n’est pas encore utilisée par le code actuel.
+
 L’utilisateur ne fournit aucune clé de management OmniRoute. Au démarrage, omni-boot génère un mot de passe aléatoire en mémoire, le transmet uniquement à son processus enfant OmniRoute via `INITIAL_PASSWORD`, attend le health-check, puis réalise `POST /api/auth/login` en loopback et conserve uniquement le cookie de session en mémoire. Ce secret n’est ni affiché ni exposé par auth-gate ; un nouveau conteneur en génère un nouveau. Le code n’envoie pas de clé `Authorization` utilisateur aux APIs de management.
 
 ## Lifecycle
