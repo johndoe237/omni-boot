@@ -45,5 +45,5 @@
     "sensenova/sensenova-6.7-flash-lite",
     "sensenova/sensenova-6.8-flash-lite"
   ],
-  "defaultModel": "mistralai/mistral-large-2512",
+  "defaultModel": "mistralai/mistral-large-2512"
 }
